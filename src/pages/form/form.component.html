@@ -1,0 +1,185 @@
+<div class="max-w-2xl mx-auto bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+  <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+    <h2 class="text-xl font-bold text-slate-800">
+      {{ editMode() ? 'Editar' : 'Añadir' }} 
+      @switch(selectedCategory()) {
+        @case('concerts') { Concierto }
+        @case('books') { Libro }
+        @case('movies') { Película }
+        @case('series') { Serie }
+        @case('games') { Videojuego }
+      }
+    </h2>
+    <button (click)="goBack()" class="text-slate-400 hover:text-slate-600">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="p-6 space-y-6">
+    
+    <!-- Category Selector (Only in Add Mode) -->
+    @if (!editMode()) {
+      <div class="space-y-2">
+        <label class="block text-sm font-medium text-slate-700">Categoría</label>
+        <div class="flex flex-wrap gap-2">
+          @for (cat of ['concerts', 'books', 'movies', 'series', 'games']; track cat) {
+            <button 
+              type="button"
+              (click)="changeCategory($any(cat))"
+              [class.bg-primary-600]="selectedCategory() === cat"
+              [class.text-white]="selectedCategory() === cat"
+              [class.bg-slate-100]="selectedCategory() !== cat"
+              [class.text-slate-600]="selectedCategory() !== cat"
+              class="px-3 py-1.5 rounded-full text-sm font-medium transition-colors capitalize"
+            >
+              {{ cat === 'concerts' ? 'Concierto' : cat === 'books' ? 'Libro' : cat === 'movies' ? 'Película' : cat === 'series' ? 'Serie' : 'Juego' }}
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Common: Title -->
+    <div>
+      <label class="block text-sm font-medium text-slate-700 mb-1">Título *</label>
+      <input formControlName="title" type="text" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all" placeholder="Nombre...">
+    </div>
+
+    <!-- Dynamic Fields based on Category -->
+    @switch (selectedCategory()) {
+      
+      @case ('concerts') {
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Lugar</label>
+            <input formControlName="venue" type="text" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Estadio, Sala...">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Año</label>
+            <input formControlName="year" type="number" [disabled]="yearUnknown()" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none disabled:bg-slate-100 disabled:text-slate-400">
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="yearUnknown" [checked]="yearUnknown()" (change)="toggleYearUnknown()" class="h-4 w-4 rounded text-primary-600 focus:ring-primary-500 border-gray-300">
+          <label for="yearUnknown" class="text-sm text-slate-700">No recuerdo el año</label>
+        </div>
+        <div class="flex items-center gap-2">
+          <input formControlName="attended" type="checkbox" id="attended" class="h-5 w-5 rounded text-primary-600 focus:ring-primary-500 border-gray-300">
+          <label for="attended" class="text-sm text-slate-700">¿Asististe?</label>
+        </div>
+      }
+
+      @case ('books') {
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Autor *</label>
+          <input formControlName="author" type="text" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+        </div>
+        <div class="flex items-center gap-2">
+          <input formControlName="isRead" type="checkbox" id="isRead" class="h-5 w-5 rounded text-primary-600 focus:ring-primary-500 border-gray-300">
+          <label for="isRead" class="text-sm text-slate-700">¿Ya lo has leído?</label>
+        </div>
+      }
+
+      @case ('movies') {
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Director</label>
+            <input formControlName="director" type="text" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Año</label>
+            <input formControlName="year" type="number" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Reparto</label>
+          <input formControlName="cast" type="text" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Actores principales...">
+        </div>
+        <div class="flex items-center gap-2">
+          <input formControlName="isSeen" type="checkbox" id="isSeen" class="h-5 w-5 rounded text-primary-600 focus:ring-primary-500 border-gray-300">
+          <label for="isSeen" class="text-sm text-slate-700">¿Vista?</label>
+        </div>
+      }
+
+      @case ('series') {
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Plataforma</label>
+          <select formControlName="platform" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white">
+            <option value="">Selecciona...</option>
+            @for (p of platformsSeries; track p) {
+              <option [value]="p">{{ p }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Seasons Manager -->
+        <div class="border-t border-slate-100 pt-4">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-semibold text-slate-800">Temporadas</h3>
+            <button type="button" (click)="addSeason()" class="text-xs font-medium text-primary-600 hover:text-primary-700">+ Añadir Temporada</button>
+          </div>
+          
+          <div formArrayName="seasons" class="space-y-4">
+            @for (season of seasonsArray.controls; track $index) {
+              <div [formGroupName]="$index" class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <div class="flex items-center gap-3 mb-2">
+                  <span class="text-sm font-bold text-slate-600 w-20">T. {{ season.get('seasonNumber')?.value }}</span>
+                  <div class="flex-1">
+                    <label class="text-xs text-slate-500 block">Nº Episodios</label>
+                    <input 
+                      type="number" 
+                      formControlName="episodeCount" 
+                      (change)="updateEpisodesForSeason($index, $any($event.target).value)"
+                      class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-primary-500"
+                    >
+                  </div>
+                  <button type="button" (click)="removeSeason($index)" class="text-red-400 hover:text-red-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+                <p class="text-xs text-slate-400 italic">Los episodios se generarán automáticamente.</p>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      @case ('games') {
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Plataforma</label>
+          <select formControlName="platform" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white">
+            <option value="">Selecciona...</option>
+            @for (p of platformsGames; track p) {
+              <option [value]="p">{{ p }}</option>
+            }
+          </select>
+        </div>
+        <div class="flex items-center gap-2">
+          <input formControlName="isPlayed" type="checkbox" id="isPlayed" class="h-5 w-5 rounded text-primary-600 focus:ring-primary-500 border-gray-300">
+          <label for="isPlayed" class="text-sm text-slate-700">¿Juego completado?</label>
+        </div>
+      }
+
+    }
+
+    <!-- Common: Comment -->
+    <div>
+      <label class="block text-sm font-medium text-slate-700 mb-1">Comentario</label>
+      <textarea formControlName="comment" rows="3" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Notas opcionales..."></textarea>
+    </div>
+
+    <!-- Actions -->
+    <div class="pt-4 flex gap-3">
+      <button type="button" (click)="goBack()" class="flex-1 py-2.5 px-4 border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors">
+        Cancelar
+      </button>
+      <button type="submit" [disabled]="form.invalid" class="flex-1 py-2.5 px-4 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-primary-500/20">
+        {{ editMode() ? 'Guardar Cambios' : 'Crear Registro' }}
+      </button>
+    </div>
+  </form>
+</div>

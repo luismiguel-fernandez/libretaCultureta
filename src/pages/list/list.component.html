@@ -1,0 +1,284 @@
+<div class="max-w-5xl mx-auto">
+  <div class="flex items-center justify-between mb-8">
+    <h2 class="text-3xl font-bold text-slate-800">{{ categoryTitle() }}</h2>
+    
+    <div class="flex items-center gap-4">
+      <!-- Search Input -->
+      <input 
+        type="text" 
+        placeholder="Buscar..." 
+        (input)="searchTerm.set($any($event.target).value)" 
+        class="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+      />
+
+      <!-- View Toggle -->
+      <div class="flex items-center gap-2">
+        <button 
+          (click)="toggleViewMode()" 
+          [ngClass]="viewMode() === 'cards' ? 'bg-primary-600 text-white' : 'bg-slate-100 text-slate-600'"
+          class="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors"
+        >
+          Tarjetas
+        </button>
+        <button 
+          (click)="toggleViewMode()" 
+          [ngClass]="viewMode() === 'table' ? 'bg-primary-600 text-white' : 'bg-slate-100 text-slate-600'"
+          class="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors"
+        >
+          Tabla
+        </button>
+      </div>
+
+      <!-- Contextual Add Button (Desktop) -->
+      <a [routerLink]="['/add']" [queryParams]="{ type: category() }" class="hidden md:inline-flex items-center gap-2 px-4 py-2 bg-white text-primary-600 border border-primary-200 rounded-lg hover:bg-primary-50 hover:border-primary-300 transition-all shadow-sm font-medium whitespace-nowrap cursor-pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        Añadir en {{ categoryTitle() }}
+      </a>
+    </div>
+  </div>
+
+  @if (viewMode() === 'cards') {
+    @if (filteredItems().length === 0) {
+      <div class="text-center py-20 bg-white rounded-xl shadow-sm border border-slate-100">
+        <div class="text-6xl mb-4">📭</div>
+        <h3 class="text-xl font-medium text-slate-600">No hay elementos todavía</h3>
+        <p class="text-slate-400 mt-2">¡Empieza añadiendo tu primer registro!</p>
+        <a [routerLink]="['/add']" [queryParams]="{ type: category() }" class="mt-6 inline-block px-6 py-2 bg-primary-100 text-primary-700 rounded-full font-medium md:hidden cursor-pointer">
+          Añadir ahora
+        </a>
+      </div>
+    }
+
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+      @for (item of filteredItems(); track item.id) {
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow duration-200 flex flex-col">
+          
+          <!-- Card Header -->
+          <div class="p-5 flex items-start justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <h3 class="font-bold text-lg text-slate-800 leading-tight truncate" [title]="item.title">{{ item.title }}</h3>
+              
+              <!-- Subtitle info based on type -->
+              @switch (item.category) {
+                @case ('concerts') {
+                  <p class="text-sm text-slate-500 mt-1 flex items-center gap-1">
+                    <span class="truncate">{{ item['venue'] || 'Lugar desconocido' }}</span>
+                    @if (item['year']) { <span class="text-slate-300">•</span> {{ item['year'] }} }
+                  </p>
+                }
+                @case ('books') {
+                  <p class="text-sm text-slate-500 mt-1 truncate">Autor: {{ item['author'] }}</p>
+                }
+                @case ('movies') {
+                  <p class="text-sm text-slate-500 mt-1 truncate">
+                    @if (item['director']) { Dir: {{ item['director'] }} }
+                    @if (item['year']) { ({{ item['year'] }}) }
+                  </p>
+                }
+                @case ('series') {
+                  <p class="text-sm text-slate-500 mt-1 flex items-center gap-2">
+                    <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-xs font-medium">{{ item['platform'] || 'TV' }}</span>
+                    <span>{{ item['seasons']?.length || 0 }} T. ({{ totalEpisodes(asSeries(item)) }} eps)</span>
+                  </p>
+                }
+                @case ('games') {
+                  <p class="text-sm text-slate-500 mt-1 truncate">
+                    <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-xs font-medium">{{ item['platform'] || 'PC' }}</span>
+                  </p>
+                }
+              }
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="flex flex-col gap-2 shrink-0">
+              @if (item.category !== 'series') {
+                <button 
+                  (click)="toggleItemStatus(item)" 
+                  class="h-8 w-8 rounded-full flex items-center justify-center transition-colors"
+                  [class.bg-green-100]="item['attended'] || item['isRead'] || item['isSeen'] || item['isPlayed']"
+                  [class.text-green-700]="item['attended'] || item['isRead'] || item['isSeen'] || item['isPlayed']"
+                  [class.bg-slate-100]="!(item['attended'] || item['isRead'] || item['isSeen'] || item['isPlayed'])"
+                  [class.text-slate-400]="!(item['attended'] || item['isRead'] || item['isSeen'] || item['isPlayed'])"
+                  title="Marcar estado"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- Comment Preview -->
+          @if (item.comment) {
+            <div class="px-5 pb-3">
+              <p class="text-sm text-slate-600 bg-slate-50 p-2 rounded border border-slate-100 italic line-clamp-2">"{{ item.comment }}"</p>
+            </div>
+          }
+
+          <!-- Series Expansion -->
+          @if (item.category === 'series') {
+            <div class="border-t border-slate-100 bg-slate-50/50">
+              <button (click)="toggleSeries(item.id)" class="w-full px-5 py-2 text-sm text-primary-600 font-medium text-left hover:bg-slate-50 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <input type="checkbox" [checked]="isSeriesWatched(asSeries(item))" (change)="toggleSeriesWatched(item.id); $event.stopPropagation()" class="h-4 w-4 rounded text-primary-600 focus:ring-primary-500 border-gray-300">
+                  <span>Ver episodios</span>
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform" [class.rotate-180]="isSeriesExpanded(item.id)" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              @if (isSeriesExpanded(item.id)) {
+                <div class="px-5 pb-4 space-y-3">
+                  @for (season of asSeries(item).seasons; track season.seasonNumber; let sIdx = $index) {
+                    <div class="bg-white rounded border border-slate-200 overflow-hidden">
+                      <button (click)="toggleSeason(item.id, sIdx)" class="w-full px-3 py-2 bg-slate-50 text-xs font-bold text-slate-700 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                          <input type="checkbox" [checked]="isSeasonWatched(season)" (change)="toggleSeasonWatched(item.id, sIdx); $event.stopPropagation()" class="h-4 w-4 rounded text-primary-600 focus:ring-primary-500 border-gray-300">
+                          <span>Temporada {{ season.seasonNumber }}</span>
+                        </div>
+                        <span class="text-slate-400 font-normal">{{ season.episodes.length }} eps</span>
+                      </button>
+                      
+                      @if (isSeasonExpanded(item.id, sIdx)) {
+                        <div class="p-2 space-y-1">
+                          @for (episode of season.episodes; track episode.number; let eIdx = $index) {
+                            <div class="flex items-center gap-3 p-2 rounded hover:bg-slate-50">
+                              <input 
+                                type="checkbox" 
+                                [checked]="episode.isWatched" 
+                                (change)="toggleEpisode(item.id, sIdx, eIdx)"
+                                class="h-4 w-4 rounded text-primary-600 focus:ring-primary-500 border-gray-300"
+                              >
+                              <span class="text-sm text-slate-700 flex-1">Ep. {{ episode.number }}</span>
+                              @if (episode.isWatched) {
+                                <span class="text-xs text-green-600 font-medium">Visto</span>
+                              }
+                            </div>
+                            <div class="pl-9 flex items-center gap-2">
+                                <span class="text-xs text-slate-500 italic flex-1">{{ episode.comment }}</span>
+                                <button (click)="editEpisodeComment(item.id, sIdx, eIdx)" class="text-slate-400 hover:text-slate-600 p-1" title="Editar comentario">
+                                  <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                </button>
+                                <button (click)="deleteEpisodeComment(item.id, sIdx, eIdx)" class="text-slate-400 hover:text-red-600 p-1" title="Eliminar comentario">
+                                  <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </div>
+                              
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Footer Actions -->
+          <div class="mt-auto border-t border-slate-100 flex divide-x divide-slate-100">
+            <button (click)="deleteItem(item.id)" class="flex-1 py-2 text-xs font-medium text-red-500 hover:bg-red-50 transition-colors">Eliminar</button>
+            <a [routerLink]="['/edit', item.id]" class="flex-1 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors text-center cursor-pointer">Editar</a>
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <!-- Table View -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <table class="w-full">
+        <thead class="bg-slate-50">
+          <tr>
+            <th (click)="toggleSort('title')" class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100">
+              Título 
+              @if (sortColumn() === 'title') { 
+                <span>{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span> 
+              }
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Tipo</th>
+            <th (click)="toggleSort('status')" class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100">
+              Estado 
+              @if (sortColumn() === 'status') { 
+                <span>{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span> 
+              }
+            </th>
+            <th (click)="toggleSort('details')" class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100">
+              Detalles 
+              @if (sortColumn() === 'details') { 
+                <span>{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span> 
+              }
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200">
+          @if (filteredItems().length === 0) {
+            <tr>
+              <td colspan="5" class="px-4 py-8 text-center text-slate-500">
+                <div class="text-4xl mb-2">📭</div>
+                <div>No hay elementos todavía</div>
+                <a [routerLink]="['/add']" [queryParams]="{ type: category() }" class="mt-2 inline-block px-4 py-2 bg-primary-100 text-primary-700 rounded-full font-medium">Añadir ahora</a>
+              </td>
+            </tr>
+          } @else {
+            @for (item of filteredItems(); track item.id) {
+              <tr class="hover:bg-slate-50">
+                <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{{ item.title }}</td>
+                <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-500">{{ categoryTitle() }}</td>
+                <td class="px-4 py-4 whitespace-nowrap">
+                  @if (item.category !== 'series') {
+                    <button 
+                      (click)="toggleItemStatus(item)" 
+                      class="h-6 w-6 rounded-full flex items-center justify-center transition-colors"
+                      [class.bg-green-100]="item['attended'] || item['isRead'] || item['isSeen'] || item['isPlayed']"
+                      [class.text-green-700]="item['attended'] || item['isRead'] || item['isSeen'] || item['isPlayed']"
+                      [class.bg-slate-100]="!(item['attended'] || item['isRead'] || item['isSeen'] || item['isPlayed'])"
+                      [class.text-slate-400]="!(item['attended'] || item['isRead'] || item['isSeen'] || item['isPlayed'])"
+                      title="Marcar estado"
+                    >
+                      <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                      </svg>
+                    </button>
+                  } @else {
+                    <span class="text-sm text-slate-500">{{ watchedEpisodes(asSeries(item)) }} / {{ totalEpisodes(asSeries(item)) }} eps</span>
+                  }
+                </td>
+                <td class="px-4 py-4 text-sm text-slate-500">
+                  @switch (item.category) {
+                    @case ('concerts') {
+                      <span>{{ item['venue'] || 'Lugar desconocido' }} @if (item['year']) { • {{ item['year'] }} }</span>
+                    }
+                    @case ('books') {
+                      <span>Autor: {{ item['author'] }}</span>
+                    }
+                    @case ('movies') {
+                      <span>@if (item['director']) { Dir: {{ item['director'] }} } @if (item['year']) { ({{ item['year'] }}) }</span>
+                    }
+                    @case ('series') {
+                      <span>{{ item['platform'] || 'TV' }} • {{ item['seasons']?.length || 0 }} T. ({{ totalEpisodes(asSeries(item)) }} eps)</span>
+                    }
+                    @case ('games') {
+                      <span>{{ item['platform'] || 'PC' }}</span>
+                    }
+                  }
+                </td>
+                <td class="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                  <a [routerLink]="['/edit', item.id]" class="text-primary-600 hover:text-primary-900 mr-4">Editar</a>
+                  <button (click)="deleteItem(item.id)" class="text-red-600 hover:text-red-900">Eliminar</button>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

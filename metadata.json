@@ -1,0 +1,5 @@
+{
+  "name": "Libreta Cultureta",
+  "description": "A comprehensive responsive application to track personal leisure activities including concerts, books, movies, series, and video games. Features local persistence and specialized tracking for series episodes.",
+  "requestFramePermissions": []
+}
